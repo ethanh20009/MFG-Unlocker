@@ -13,6 +13,9 @@ HRESULT ParentFactoryCall(ParentFn,IDXGIObject*,REFIID,void**) noexcept;
 // WrapUpgraded wraps the upgraded factory in *output as if creation had
 // returned it, so its swapchains get the menu. True when *output was replaced.
 bool Owned(IUnknown*) noexcept;
+// Give Streamline the native DXGI factory table when the game passes one of
+// this layer's factory proxies through slUpgradeInterface.
+bool UnwrapForStreamline(void** object) noexcept;
 bool WrapUpgraded(void** output) noexcept;
 // diag171.1 logging: "<pointer> <kind> ours=<0|1> queryInterface=<module+0xRVA>".
 // Kind is the first public interface the object answers: factory, swapchain,

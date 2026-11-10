@@ -8150,6 +8150,12 @@ sl::Result HookSlUpgradeInterface(void** baseInterface)
     wchar_t inputText[256]{};
     if (describe)
         single_overlay::DescribeInterface(input, inputText, 256);
+    // Streamline's DLSS-G swap-chain path calls DXGI directly on the factory
+    // passed by the host. A menu proxy is not a native DXGI implementation,
+    // so transfer this call's reference to the underlying factory first. The
+    // upgraded result is wrapped below for the menu as usual.
+    const bool unwrapped = baseInterface
+        && single_overlay::UnwrapForStreamline(baseInterface);
     const sl::Result result = original(baseInterface);
     const uint64_t call =
         gSlUpgradeInterfaceCalls.fetch_add(1, std::memory_order_relaxed) + 1;
@@ -8169,9 +8175,10 @@ sl::Result HookSlUpgradeInterface(void** baseInterface)
             && callerModule)
             GetModuleFileNameW(callerModule, callerPath, MAX_PATH);
         const wchar_t* callerLeaf = wcsrchr(callerPath, L'\\');
-        Log(L"Streamline slUpgradeInterface call=%llu result=%d "
+        Log(L"Streamline slUpgradeInterface call=%llu result=%d unwrappedMenuFactory=%d "
             L"ownedInput=%d caller=%ls+0x%llX input={%ls} output={%ls}",
             static_cast<unsigned long long>(call), static_cast<int>(result),
+            unwrapped ? 1 : 0,
             owned ? 1 : 0,
             callerLeaf ? callerLeaf + 1 : (callerPath[0] ? callerPath : L"(none)"),
             static_cast<unsigned long long>(callerModule
@@ -8179,7 +8186,8 @@ sl::Result HookSlUpgradeInterface(void** baseInterface)
                     - reinterpret_cast<uintptr_t>(callerModule) : 0),
             inputText, outputText);
     }
-    if (result == sl::Result::eOk && !owned && baseInterface && *baseInterface
+    if (baseInterface && *baseInterface
+        && (unwrapped || (result == sl::Result::eOk && !owned))
         && single_overlay::WrapUpgradedInterface(baseInterface))
     {
         const uint64_t wrapped = gSlUpgradeInterfaceWrapped.fetch_add(1,

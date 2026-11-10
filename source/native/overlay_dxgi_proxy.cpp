@@ -606,6 +606,25 @@ bool Owned(IUnknown* object) noexcept {
     InternalScope internal;
     return AlreadyWrapped(object,factoryId)||AlreadyWrapped(object,chainId);
 }
+bool UnwrapForStreamline(void** object) noexcept {
+    if (!object || !*object) return false;
+    auto* proxy = static_cast<IUnknown*>(*object);
+    if (!native::PinInterface(proxy,2)) return false;
+    InternalScope internal;
+    void* marker = nullptr;
+    if (proxy->QueryInterface(factoryId,&marker) != S_OK || !marker) {
+        if (marker) static_cast<IUnknown*>(marker)->Release();
+        return false;
+    }
+    static_cast<IUnknown*>(marker)->Release();
+    auto* factory = static_cast<FactoryProxy*>(static_cast<IDXGIFactory7*>(marker));
+    IDXGIFactory* original = factory->original.Get();
+    if (!original) return false;
+    original->AddRef();
+    *object = original;
+    proxy->Release();
+    return true;
+}
 void Describe(IUnknown* object,wchar_t* text,size_t count) noexcept {
     if (!object) { swprintf_s(text,count,L"null"); return; }
     if (native::InsideLoader()) { swprintf_s(text,count,L"%p (loader lock)",static_cast<void*>(object)); return; }

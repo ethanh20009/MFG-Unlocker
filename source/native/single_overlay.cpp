@@ -198,6 +198,9 @@ void ArmInterposerFactories() noexcept {
     }
 }
 }
+bool UnwrapForStreamline(void** object) noexcept {
+    return proxy::UnwrapForStreamline(object);
+}
 FARPROC ResolveProc(HMODULE module,LPCSTR name,FARPROC original) noexcept {
     if (gInsideOverlay||!single_module::OwnsBackend()||!original||!name||reinterpret_cast<uintptr_t>(name)<=0xffff) return original;
 #if MFG_UNLOCK_DIAGNOSTIC_NO_SINGLE_OVERLAY

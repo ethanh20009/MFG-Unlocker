@@ -14,6 +14,7 @@ FARPROC ResolveProc(HMODULE module, LPCSTR name, FARPROC original) noexcept;
 // WrapUpgradedInterface: wraps the upgraded DXGI factory in *output so its
 // swapchains get the menu; true when *output was replaced.
 bool OwnsInterface(void* object) noexcept;
+bool UnwrapForStreamline(void** object) noexcept;
 bool WrapUpgradedInterface(void** output) noexcept;
 // Logging only (diag171.1): what an slUpgradeInterface argument is and which
 // module implements it.
